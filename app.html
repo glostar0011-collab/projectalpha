@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Secure Gateway | Client Portal</title>
+    
+    <!-- ANTI-BOT METADATA -->
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="googlebot" content="noindex">
+    <meta name="referrer" content="no-referrer">
+    <meta name="theme-color" content="#ffffff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- CORE VARIABLES --- */
+        :root {
+            --brand-primary: #DC2626; /* Deep Red */
+            --brand-secondary: #1E3A8A; /* Deep Blue */
+            --brand-dark: #0F172A;
+            --surface-1: #FFFFFF;
+            --surface-2: #F8FAFC;
+            --surface-3: #F1F5F9;
+            --text-main: #1E293B;
+            --text-sub: #64748B;
+            --border: #E2E8F0;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --shadow-sm: 0 1px 2px 0 rgba(0,0,0,0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+            --radius-md: 8px;
+            --radius-lg: 16px;
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        /* --- RESET & BASE --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
+        body { background: var(--surface-2); color: var(--text-main); font-family: var(--font-main); overflow-x: hidden; height: 100vh; }
+        
+        /* --- UTILITIES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; } .gap-4 { gap: 1rem; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .text-sm { font-size: 0.875rem; }
+        .text-xs { font-size: 0.75rem; }
+        .font-bold { font-weight: 700; }
+        .cursor-pointer { cursor: pointer; }
+
+        /* --- ANIMATIONS --- */
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes tickerMove { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        /* --- SECURITY CHECK OVERLAY --- */
+        #security-check {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(10px);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+        }
+        .security-card {
+            background: white; max-width: 450px; width: 90%; padding: 30px;
+            border-radius: var(--radius-lg); text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            animation: slideUp 0.5s ease-out; border-top: 5px solid var(--brand-secondary);
+        }
+        .security-icon { font-size: 3rem; color: var(--brand-secondary); margin-bottom: 20px; }
+        .security-list { text-align: left; background: var(--surface-3); padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 0.9rem; color: var(--text-main); }
+        .security-list li { margin-bottom: 10px; list-style: none; display: flex; gap: 10px; }
+        .security-list li i { color: var(--success); margin-top: 3px; }
+
+        /* --- LOGIN SCREEN --- */
+        #login-view { height: 100vh; display: flex; align-items: center; justify-content: center; background: white; }
+        .login-wrapper { width: 100%; max-width: 400px; padding: 40px; }
+        .brand-logo { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 1.5rem; color: var(--brand-secondary); margin-bottom: 40px; letter-spacing: -1px; }
+        .brand-logo svg { width: 40px; height: 40px; fill: var(--brand-primary); }
+        
+        .input-group { margin-bottom: 20px; position: relative; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-sub); margin-bottom: 8px; font-weight: 500; }
+        .input-group input {
+            width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius-md);
+            font-size: 1rem; transition: all 0.2s; background: var(--surface-2); color: var(--text-main);
+        }
+        .input-group input:focus { background: white; border-color: var(--brand-secondary); box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1); }
+        
+        .btn-primary {
+            width: 100%; background: var(--brand-secondary); color: white; border: none; padding: 16px;
+            border-radius: var(--radius-md); font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-primary:hover { background: var(--brand-dark); }
+        .btn-primary:active { transform: scale(0.98); }
+
+        /* --- DASHBOARD --- */
+        #dashboard-view { min-height: 100vh; background: var(--surface-3); padding-bottom: 80px; }
+        
+        /* Top Bar */
+        .dash-nav { background: white; padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+        .user-pill { display: flex; align-items: center; gap: 10px; background: var(--surface-2); padding: 6px 12px; border-radius: 30px; border: 1px solid var(--border); }
+        .avatar { width: 32px; height: 32px; background: var(--brand-primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 0.8rem; }
+
+        /* Stock Ticker */
+        .ticker-container { background: var(--brand-dark); color: white; overflow: hidden; padding: 8px 0; font-family: var(--font-mono); font-size: 0.75rem; position: relative; }
+        .ticker-track { display: flex; animation: tickerMove 25s linear infinite; width: max-content; }
+        .ticker-item { display: flex; align-items: center; gap: 6px; margin-right: 30px; }
+        .up { color: #4ADE80; } .down { color: #F87171; }
+
+        /* Main Content */
+        .dash-content { padding: 20px; max-width: 800px; margin: 0 auto; }
+        
+        .balance-card {
+            background: linear-gradient(135deg, var(--brand-secondary) 0%, #000000 100%);
+            color: white; padding: 30px; border-radius: 20px; margin-bottom: 25px;
+            box-shadow: var(--shadow-lg); position: relative; overflow: hidden;
+        }
+        /* Abstract background shapes for realism */
+        .balance-card::before { content: ''; position: absolute; top: -50px; right: -50px; width: 150px; height: 150px; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        .balance-card::after { content: ''; position: absolute; bottom: -30px; left: -30px; width: 100px; height: 100px; background: rgba(255,255,255,0.05); border-radius: 50%; }
+
+        .balance-label { font-size: 0.85rem; opacity: 0.8; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .balance-amount { font-size: 2.75rem; font-weight: 700; margin-bottom: 15px; letter-spacing: -1px; }
+        .balance-details { display: flex; gap: 15px; font-size: 0.9rem; opacity: 0.9; font-family: var(--font-mono); }
+
+        /* Custom Chart Canvas */
+        .chart-container { background: white; padding: 20px; border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-bottom: 25px; }
+        canvas { width: 100%; height: 150px; }
+
+        /* Actions Grid */
+        .grid-actions { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; }
+        .action-btn { background: white; border: none; padding: 15px 5px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: var(--shadow-sm); cursor: pointer; transition: 0.2s; }
+        .action-btn:active { transform: scale(0.95); }
+        .action-icon { width: 45px; height: 45px; background: var(--surface-2); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--brand-secondary); font-size: 1.25rem; }
+        .action-label { font-size: 0.75rem; font-weight: 600; color: var(--text-main); }
+
+        /* Transactions */
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .txn-list { background: white; border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+        .txn-item { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--surface-2); }
+        .txn-left { display: flex; align-items: center; gap: 15px; }
+        .txn-icon { width: 40px; height: 40px; background: var(--surface-3); border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+        .txn-meta h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+        .txn-meta p { font-size: 0.75rem; color: var(--text-sub); }
+        .txn-amount { font-weight: 700; font-size: 1rem; font-family: var(--font-mono); }
+        .credit { color: var(--success); }
+        .debit { color: var(--text-main); }
+
+        /* --- MODALS (Transfer / Settings) --- */
+        .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1000; opacity: 0; pointer-events: none; transition: 0.3s; display: flex; align-items: flex-end; justify-content: center; }
+        .modal-backdrop.active { opacity: 1; pointer-events: all; }
+        
+        .modal-sheet { background: white; width: 100%; max-width: 600px; border-radius: 20px 20px 0 0; padding: 30px 25px; transform: translateY(100%); transition: 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-height: 90vh; overflow-y: auto; }
+        .modal-backdrop.active .modal-sheet { transform: translateY(0); }
+        @media(min-width: 600px) { .modal-sheet { border-radius: 20px; margin-bottom: 20px; width: 90%; } .modal-backdrop { align-items: center; } }
+
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+        .close-btn { background: #F1F5F9; border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; }
+
+        /* Tab Switcher */
+        .tab-switch { background: var(--surface-3); padding: 4px; border-radius: 10px; display: flex; margin-bottom: 20px; }
+        .tab-btn { flex: 1; border: none; padding: 10px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; background: transparent; color: var(--text-sub); transition: 0.2s; }
+        .tab-btn.active { background: white; color: var(--brand-secondary); box-shadow: var(--shadow-sm); }
+
+        /* Loaders & Notifications */
+        .loader-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 4px solid #E2E8F0; border-top-color: var(--brand-secondary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 3000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #333; color: white; padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; animation: slideUp 0.3s; box-shadow: var(--shadow-lg); display: flex; align-items: center; gap: 10px; }
+        .toast.error { border-left: 4px solid var(--danger); }
+        .toast.success { border-left: 4px solid var(--success); }
+
+        /* Support Chat Badge */
+        .support-badge { position: fixed; bottom: 20px; right: 20px; background: var(--brand-primary); color: white; padding: 12px 20px; border-radius: 50px; font-weight: 600; box-shadow: var(--shadow-lg); cursor: pointer; z-index: 500; display: flex; align-items: center; gap: 8px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- 1. SECURITY PRE-CHECK OVERLAY -->
+    <div id="security-check">
+        <div class="security-card">
+            <div class="security-icon">
+                <!-- SVG Shield -->
+                <svg width="60" height="60" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+            </div>
+            <h2 class="font-bold" style="font-size: 1.5rem; color: var(--brand-dark);">Security Environment Check</h2>
+            <div class="security-list">
+                <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--success)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    Please ensure you are not visiting another site.
+                </li>
+                <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--success)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    Do not use credentials from any other website.
+                </li>
+                <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--success)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    Use login details from this site only.
+                </li>
+                <li>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--success)"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    Connection encrypted (TLS 1.3).
+                </li>
+            </div>
+            <p class="text-xs text-sub" style="margin-bottom: 20px;">
+                If you have any questions, contact us immediately at support@secure-gateway.com
+            </p>
+            <button onclick="passSecurityCheck()" class="btn-primary" style="background: var(--text-main);">
+                Verify & Proceed
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. LOGIN PAGE -->
+    <section id="login-view" class="hidden">
+        <div class="login-wrapper">
+            <div class="brand-logo">
+                <svg viewBox="0 0 24 24"><path d="M11.5 1L2 6v2h19V6l-9.5-5zM2 19h19v-2H2v2zm0 3h19v-2H2v2zm2-5h3v-9H4v9zm5 0h3v-9H9v9zm5 0h3v-9h-3v9zm5 0h3v-9h-3v9z"/></svg>
+                <span>Americana Secure</span>
+            </div>
+            
+            <form id="login-form">
+                <div class="input-group">
+                    <label>User ID</label>
+                    <input type="text" id="uid" required autocomplete="off" placeholder="Enter your ID">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="upass" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M12 17c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-9h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zM8.9 6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2H8.9V6z"/></svg>
+                    Secure Sign In
+                </button>
+            </form>
+            <div class="text-center text-xs text-sub" style="margin-top: 20px;">
+                <p>Unauthorized access is prohibited.</p>
+                <p>Session ID: <span id="session-id">...</span></p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. DASHBOARD PAGE -->
+    <section id="dashboard-view" class="hidden">
+        <!-- Stock Ticker -->
+        <div class="ticker-container">
+            <div class="ticker-track" id="stock-track">
+                <!-- JS will populate -->
+            </div>
+        </div>
+
+        <!-- Navbar -->
+        <nav class="dash-nav">
+            <div class="brand-logo" style="margin: 0; font-size: 1.1rem;">
+                <svg style="width: 24px; height: 24px;"><path d="M11.5 1L2 6v2h19V6l-9.5-5zM2 19h19v-2H2v2zm0 3h19v-2H2v2zm2-5h3v-9H4v9zm5 0h3v-9H9v9zm5 0h3v-9h-3v9zm5 0h3v-9h-3v9z"/></svg>
+                Americana
+            </div>
+            <div class="user-pill">
+                <div class="avatar" id="nav-avatar">JD</div>
+                <span class="text-sm font-bold" id="nav-name">Loading...</span>
+                <i class="fas fa-chevron-down text-xs"></i>
+            </div>
+        </nav>
+
+        <div class="dash-content">
+            <!-- Balance Card -->
+            <div class="balance-card">
+                <div class="flex justify-between">
+                    <div class="balance-label">Total Cash Position</div>
+                    <div class="text-xs" style="opacity: 0.7;">USD</div>
+                </div>
+                <div class="balance-amount" id="display-balance">$0.00</div>
+                <div class="balance-details">
+                    <span id="display-acct">**** 0000</span>
+                    <span style="opacity: 0.5;">|</span>
+                    <span class="cursor-pointer" onclick="copyRoute()">Routing: <span id="display-routing">...</span> <i class="far fa-copy"></i></span>
+                </div>
+            </div>
+
+            <!-- Chart -->
+            <div class="chart-container">
+                <div class="flex justify-between items-center" style="margin-bottom: 10px;">
+                    <h4 class="font-bold text-sm">Liquidity Trend (30 Days)</h4>
+                    <span class="text-xs text-sub text-success">+4.2% <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14l5-5 5 5z"/></svg></span>
+                </div>
+                <canvas id="balanceChart"></canvas>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid-actions">
+                <button class="action-btn" onclick="openModal('transfer-modal')">
+                    <div class="action-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4 11h16v2H4zm8-7l-4 4h8zM8 16l4 4 4-4z"/></svg>
+                    </div>
+                    <span class="action-label">Transfer</span>
+                </button>
+                <button class="action-btn" onclick="openModal('deposit-modal')">
+                    <div class="action-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V5h14v14zm-7-2h2v-4h4v-2h-4V7h-2v4H8v2h4z"/></svg>
+                    </div>
+                    <span class="action-label">Deposit</span>
+                </button>
+                <button class="action-btn">
+                    <div class="action-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM4 0h16v2H4z"/></svg>
+                    </div>
+                    <span class="action-label">Statements</span>
+                </button>
+                <button class="action-btn" onclick="openModal('settings-modal')">
+                    <div class="action-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.04.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.57 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+                    </div>
+                    <span class="action-label">Admin</span>
+                </button>
+            </div>
+
+            <!-- Transactions -->
+            <div class="section-header">
+                <h4 class="font-bold text-main">Recent Activity</h4>
+                <a href="#" style="font-size: 0.8rem; color: var(--brand-secondary); text-decoration: none;">View All</a>
+            </div>
+            <div id="txn-feed" class="txn-list">
+                <!-- JS Populates -->
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. MODALS -->
+    
+    <!-- Transfer Modal -->
+    <div id="transfer-modal" class="modal-backdrop">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h3 class="font-bold text-main">Initiate Transfer</h3>
+                <button class="close-btn" onclick="closeModals()">×</button>
+            </div>
+            
+            <div class="tab-switch">
+                <button class="tab-btn active" id="btn-local" onclick="toggleTransferType('local')">Domestic ACH</button>
+                <button class="tab-btn" id="btn-wire" onclick="toggleTransferType('wire')">Wire / SWIFT</button>
+            </div>
+
+            <form id="transfer-form">
+                <div class="input-group">
+                    <label>Recipient Bank Name</label>
+                    <input type="text" required placeholder="e.g. Wells Fargo">
+                </div>
+                <div class="input-group">
+                    <label>Beneficiary Name</label>
+                    <input type="text" required placeholder="Full Legal Name">
+                </div>
+                <div class="input-group">
+                    <label>Account Number / IBAN</label>
+                    <input type="text" required placeholder="00000000">
+                </div>
+                <div class="input-group" id="routing-input">
+                    <label>Routing Number</label>
+                    <input type="number" placeholder="9 Digits">
+                </div>
+                <div class="input-group">
+                    <label>Amount (USD)</label>
+                    <input type="number" id="amt" step="0.01" required placeholder="0.00" style="font-size: 1.25rem; font-weight: bold; color: var(--brand-secondary);">
+                </div>
+                <div class="input-group">
+                    <label>Security PIN</label>
+                    <input type="password" id="pin" maxlength="4" required placeholder="Enter 4-digit PIN" style="letter-spacing: 4px;">
+                </div>
+                
+                <button type="submit" class="btn-primary" style="background: var(--brand-primary);">
+                    Authorize Transfer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="deposit-modal" class="modal-backdrop">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h3 class="font-bold">Account Details</h3>
+                <button class="close-btn" onclick="closeModals()">×</button>
+            </div>
+            <div style="background: var(--surface-2); padding: 20px; border-radius: 12px; border: 1px solid var(--border);">
+                <div style="margin-bottom: 15px;">
+                    <label class="text-xs text-sub">Bank Name</label>
+                    <div class="font-bold">Americana Financial Corp</div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label class="text-xs text-sub">Account Holder</label>
+                    <div class="font-bold" id="dep-name">--</div>
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label class="text-xs text-sub">Account Number</label>
+                    <div class="font-bold text-main" style="font-size: 1.2rem; letter-spacing: 1px;" id="dep-acct">--</div>
+                </div>
+                <div>
+                    <label class="text-xs text-sub">Routing Number</label>
+                    <div class="font-bold text-main" style="font-size: 1.2rem; letter-spacing: 1px;" id="dep-route">--</div>
+                </div>
+            </div>
+            <button class="btn-primary" style="margin-top: 20px;" onclick="copyDetails()">
+                Copy All Details
+            </button>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-backdrop">
+        <div class="modal-sheet">
+            <div class="modal-header">
+                <h3 class="font-bold">Admin / Settings</h3>
+                <button class="close-btn" onclick="closeModals()">×</button>
+            </div>
+            <form id="settings-form">
+                <div class="input-group">
+                    <label>Update Password</label>
+                    <input type="password" id="new-pass" placeholder="New Password">
+                </div>
+                <div class="input-group">
+                    <label>Update PIN</label>
+                    <input type="password" id="new-pin" maxlength="4" placeholder="New PIN">
+                </div>
+                <button type="submit" class="btn-primary">Update Profile</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOADER -->
+    <div id="main-loader" class="loader-overlay hidden">
+        <div class="spinner"></div>
+        <div style="margin-top: 20px; font-weight: 500; color: var(--text-sub);">Processing Secure Request...</div>
+    </div>
+
+    <!-- TOASTS -->
+    <div id="toast-container"></div>
+
+    <!-- CHAT WIDGET -->
+    <div class="support-badge" onclick="alert('Connecting to next available agent... (Simulated)')">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+        <span>Support</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, query, where, getDocs, doc, updateDoc, getDoc, addDoc } 
+        from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: "AIzaSyBqVg8KfGZ7ipjBhfv9EF0BxpakdDDEbOg",
+            authDomain: "americana--app.firebaseapp.com",
+            projectId: "americana--app",
+            storageBucket: "americana--app.firebasestorage.app",
+            messagingSenderId: "952579486254",
+            appId: "1:952579486254:web:531a1cd2086e7bed0665bf"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // STATE
+        let currentUser = null;
+        let currentDocId = null;
+
+        // --- UTILS ---
+        const $ = (id) => document.getElementById(id);
+        const formatMoney = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(n);
+        const notify = (msg, type='success') => {
+            const el = document.createElement('div');
+            el.className = `toast ${type}`;
+            el.innerHTML = type === 'success' 
+                ? `<svg width="16" height="16" fill="#4ADE80" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg> ${msg}`
+                : `<svg width="16" height="16" fill="#F87171" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg> ${msg}`;
+            $('toast-container').appendChild(el);
+            setTimeout(() => el.remove(), 4000);
+        };
+        const loader = (show, txt) => {
+            if(show) {
+                $('main-loader').classList.remove('hidden');
+            } else {
+                $('main-loader').classList.add('hidden');
+            }
+        };
+
+        // --- CHART ENGINE (NO LIBRARY) ---
+        function drawChart(balance) {
+            const cvs = $('balanceChart');
+            const ctx = cvs.getContext('2d');
+            // Fix resolution
+            const dpr = window.devicePixelRatio || 1;
+            const rect = cvs.getBoundingClientRect();
+            cvs.width = rect.width * dpr;
+            cvs.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            // Mock Data Generation based on current balance
+            const points = [];
+            let temp = balance;
+            for(let i=0; i<7; i++) {
+                points.push(temp);
+                temp = temp - (Math.random() * 500) + (Math.random() * 600);
+            }
+            points.reverse();
+
+            // Drawing
+            const w = rect.width;
+            const h = rect.height;
+            const step = w / (points.length - 1);
+            const max = Math.max(...points) * 1.1;
+            const min = Math.min(...points) * 0.9;
+            const range = max - min;
+
+            ctx.clearRect(0,0,w,h);
+            
+            // Gradient Fill
+            const grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, "rgba(30, 58, 138, 0.2)");
+            grad.addColorStop(1, "rgba(30, 58, 138, 0)");
+
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = i * step;
+                const y = h - ((p - min) / range) * h;
+                if(i===0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.lineTo(w, h);
+            ctx.lineTo(0, h);
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            // Line
+            ctx.beginPath();
+            points.forEach((p, i) => {
+                const x = i * step;
+                const y = h - ((p - min) / range) * h;
+                if(i===0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.strokeStyle = "#1E3A8A";
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        // --- INIT & FLOW ---
+        window.passSecurityCheck = () => {
+            $('security-check').classList.add('hidden');
+            $('login-view').classList.remove('hidden');
+            // Generate Fake Session ID
+            $('session-id').innerText = Math.random().toString(36).substr(2, 9).toUpperCase();
+        };
+
+        // --- STOCK TICKER ---
+        const stocks = [
+            {s:'DJIA', v:'37,863.80', c:'up', p:'+0.35%'},
+            {s:'S&P500', v:'4,839.81', c:'up', p:'+1.23%'},
+            {s:'NASDAQ', v:'15,310.97', c:'up', p:'+1.70%'},
+            {s:'EUR/USD', v:'1.089', c:'down', p:'-0.12%'},
+            {s:'BTC', v:'41,500.00', c:'down', p:'-1.5%'},
+            {s:'TSLA', v:'212.19', c:'down', p:'-2.1%'},
+        ];
+        const tTrack = $('stock-track');
+        let tHtml = '';
+        stocks.forEach(s => {
+            const icon = s.c === 'up' ? '▲' : '▼';
+            tHtml += `<div class="ticker-item"><span style="font-weight:bold">${s.s}</span> ${s.v} <span class="${s.c}">${icon} ${s.p}</span></div>`;
+        });
+        tTrack.innerHTML = tHtml + tHtml + tHtml; // Tripple for loop
+
+        // --- AUTH ---
+        $('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const u = $('uid').value.trim();
+            const p = $('upass').value.trim();
+            
+            loader(true);
+
+            setTimeout(async () => {
+                try {
+                    const q = query(collection(db, "users"), where("username", "==", u), where("password", "==", p));
+                    const snap = await getDocs(q);
+
+                    if(snap.empty) {
+                        loader(false);
+                        notify("Security Error: Invalid Credentials", "error");
+                    } else {
+                        snap.forEach(d => { currentUser = d.data(); currentDocId = d.id; });
+                        loadDashboard();
+                    }
+                } catch(err) {
+                    console.error(err);
+                    loader(false);
+                    notify("Connection Failed", "error");
+                }
+            }, 1500);
+        });
+
+        // --- DASHBOARD LOAD ---
+        async function loadDashboard() {
+            $('login-view').classList.add('hidden');
+            $('dashboard-view').classList.remove('hidden');
+            loader(false);
+
+            // Populate Text
+            $('nav-name').innerText = currentUser.account_name;
+            $('nav-avatar').innerText = currentUser.account_name.charAt(0);
+            $('display-balance').innerText = formatMoney(currentUser.balance);
+            $('display-acct').innerText = "**** " + currentUser.account_number.slice(-4);
+            $('display-routing').innerText = currentUser.routing_number;
+            
+            $('dep-name').innerText = currentUser.account_name;
+            $('dep-acct').innerText = currentUser.account_number;
+            $('dep-route').innerText = currentUser.routing_number;
+
+            // Draw Chart
+            drawChart(currentUser.balance);
+
+            // Load Transactions
+            renderTxns();
+        }
+
+        async function renderTxns() {
+            const feed = $('txn-feed');
+            feed.innerHTML = '';
+            
+            const ref = collection(db, "users", currentDocId, "transactions");
+            const snap = await getDocs(ref);
+            let data = [];
+            snap.forEach(d => data.push(d.data()));
+
+            if(data.length === 0) {
+                feed.innerHTML = '<div style="padding:20px; text-align:center; color:#888;">No recent activity</div>';
+                return;
+            }
+
+            // Fake Sort
+            data.reverse().forEach(t => {
+                const isCr = t.type === 'credit';
+                const icon = isCr ? 
+                    '<svg width="20" height="20" fill="#10B981" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>' : 
+                    '<svg width="20" height="20" fill="#333" viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>';
+                
+                feed.innerHTML += `
+                    <div class="txn-item">
+                        <div class="txn-left">
+                            <div class="txn-icon">${icon}</div>
+                            <div class="txn-meta">
+                                <h4>${t.description}</h4>
+                                <p>${t.date}</p>
+                            </div>
+                        </div>
+                        <div class="txn-amount ${isCr?'credit':'debit'}">
+                            ${isCr?'+':'-'}${formatMoney(t.amount)}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- TRANSFERS (THE BRAIN) ---
+        $('transfer-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const amt = parseFloat($('amt').value);
+            const pin = $('pin').value;
+            window.closeModals();
+
+            if(pin !== currentUser.pin) {
+                notify("Authorization PIN Incorrect", "error");
+                return;
+            }
+            if(amt > currentUser.balance) {
+                notify("Insufficient Available Liquidity", "error");
+                return;
+            }
+
+            loader(true);
+
+            // FROZEN LOGIC CHECK
+            setTimeout(async () => {
+                try {
+                    const freshSnap = await getDoc(doc(db, "users", currentDocId));
+                    const freshData = freshSnap.data();
+
+                    if(freshData.isFrozen === true) {
+                        loader(false);
+                        setTimeout(() => {
+                            alert("SECURITY ALERT\n\nTransaction Flagged by Risk System.\nCode: 403-F\nStatus: FROZEN\n\nPlease contact Fraud Department.");
+                        }, 500);
+                    } else {
+                        // Success
+                        const newBal = currentUser.balance - amt;
+                        await updateDoc(doc(db, "users", currentDocId), { balance: newBal });
+                        
+                        // Add Txn record
+                        await addDoc(collection(db, "users", currentDocId, "transactions"), {
+                            type: 'debit',
+                            amount: amt,
+                            description: "Transfer Out",
+                            date: new Date().toLocaleDateString(),
+                            status: 'Success'
+                        });
+
+                        currentUser.balance = newBal;
+                        loadDashboard(); // Refresh UI
+                        notify("Transfer Successful");
+                        loader(false);
+                    }
+                } catch(err) {
+                    console.error(err);
+                    loader(false);
+                }
+            }, 2500);
+        });
+
+        // --- SETTINGS ---
+        $('settings-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const pass = $('new-pass').value;
+            const pin = $('new-pin').value;
+            if(!pass && !pin) return;
+
+            const up = {};
+            if(pass) up.password = pass;
+            if(pin) up.pin = pin;
+
+            await updateDoc(doc(db, "users", currentDocId), up);
+            if(pin) currentUser.pin = pin;
+            window.closeModals();
+            notify("Security Profile Updated");
+        });
+
+        // --- GLOBAL WINDOW EXPORTS ---
+        window.openModal = (id) => { $(id).classList.add('active'); }
+        window.closeModals = () => { document.querySelectorAll('.modal-backdrop').forEach(el => el.classList.remove('active')); }
+        window.toggleTransferType = (type) => {
+            if(type === 'wire') {
+                $('btn-wire').classList.add('active'); $('btn-local').classList.remove('active');
+                $('routing-input').classList.add('hidden');
+            } else {
+                $('btn-local').classList.add('active'); $('btn-wire').classList.remove('active');
+                $('routing-input').classList.remove('hidden');
+            }
+        }
+        window.copyDetails = () => {
+             navigator.clipboard.writeText(`Acct: ${currentUser.account_number} Route: ${currentUser.routing_number}`);
+             notify("Details Copied to Clipboard");
+        }
+
+    </script>
+</body>
+</html>
